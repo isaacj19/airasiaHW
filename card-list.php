@@ -1,71 +1,58 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AirAsia Rewards Catalog</title>
-    <link rel="stylesheet" href="css/styles.css">
-</head>
-<body>
-    <header>
-        <h1>AirAsia Rewards Catalog</h1>
-        <nav>
-            <a href="login.php">Logout</a>
-        </nav>
-    </header>
-    <main>
-        <div class="catalog-header">
-            <h2>Available Rewards</h2>
-            <div>
-                <a href="card-add.php" class="btn btn-primary">Add Gift Card</a>
-            </div>
-        </div>
-        
-        <div class="card-grid">
-            <!-- Card 1 -->
-            <div class="card-item">
-                <a href="card-details.php">
-                    <img src="images/gift-card.png" alt="AirAsia Flight Voucher">
-                </a>
-                <div class="card-item-body">
-                    <h3><a href="card-details.php">AirAsia $100 Flight Voucher</a></h3>
-                    <p class="points-tag">10,000 Points Needed</p>
-                </div>
-            </div>
+<?php
+require_once __DIR__ . '/includes/db.php';
 
-            <!-- Card 2 -->
-            <div class="card-item">
-                <a href="card-details.php">
-                    <img src="images/gift-card.png" alt="Plaza Premium Lounge Access">
-                </a>
-                <div class="card-item-body">
-                    <h3><a href="card-details.php">Plaza Premium Lounge Pass</a></h3>
-                    <p class="points-tag">5,000 Points Needed</p>
-                </div>
-            </div>
+$pdo = getDbConnection();
+$stmt = $pdo->query('SELECT cardId, cardName, cardType, cardValue, points FROM GIFTCARD ORDER BY cardId ASC');
+$cards = $stmt->fetchAll();
 
-            <!-- Card 3 -->
-            <div class="card-item">
-                <a href="card-details.php">
-                    <img src="images/gift-card.png" alt="SANTAN Meal Experience">
-                </a>
-                <div class="card-item-body">
-                    <h3><a href="card-details.php">SANTAN Inflight Meal Combo</a></h3>
-                    <p class="points-tag">1,200 Points Needed</p>
-                </div>
-            </div>
+$statusMessage = '';
+if (isset($_GET['status'])) {
+    if ($_GET['status'] === 'added') {
+        $statusMessage = 'New gift card added successfully.';
+    } elseif ($_GET['status'] === 'deleted') {
+        $statusMessage = 'Gift card deleted successfully.';
+    }
+}
 
-            <!-- Card 4 -->
+$pageTitle = 'AirAsia Rewards Catalog';
+require_once __DIR__ . '/includes/header.php';
+?>
+
+<?php if ($statusMessage !== ''): ?>
+    <div class="card-panel" style="margin-bottom: 1.5rem; border-left: 5px solid #28a745; padding: 1rem 1.5rem;">
+        <strong><?= htmlspecialchars($statusMessage, ENT_QUOTES, 'UTF-8') ?></strong>
+    </div>
+<?php endif; ?>
+
+<div class="catalog-header">
+    <h2>Available Rewards (<?= count($cards) ?>)</h2>
+    <div>
+        <a href="card-add.php" class="btn btn-primary">Add Gift Card</a>
+    </div>
+</div>
+
+<?php if (empty($cards)): ?>
+    <section class="card-panel">
+        <p>No gift cards are currently available in the catalog.</p>
+    </section>
+<?php else: ?>
+    <div class="card-grid">
+        <?php foreach ($cards as $card): ?>
             <div class="card-item">
-                <a href="card-details.php">
-                    <img src="images/gift-card.png" alt="AirAsia Baggage Upgrade">
+                <a href="card-details.php?card_id=<?= (int)$card['cardId'] ?>">
+                    <img src="images/gift-card.png" alt="<?= htmlspecialchars($card['cardName'], ENT_QUOTES, 'UTF-8') ?>">
                 </a>
                 <div class="card-item-body">
-                    <h3><a href="card-details.php">20kg Extra Baggage Voucher</a></h3>
-                    <p class="points-tag">2,500 Points Needed</p>
+                    <h3>
+                        <a href="card-details.php?card_id=<?= (int)$card['cardId'] ?>">
+                            <?= htmlspecialchars($card['cardName'], ENT_QUOTES, 'UTF-8') ?>
+                        </a>
+                    </h3>
+                    <p class="points-tag"><?= number_format((int)$card['points']) ?> Points Needed</p>
                 </div>
             </div>
-        </div>
-    </main>
-</body>
-</html>
+        <?php endforeach; ?>
+    </div>
+<?php endif; ?>
+
+<?php require_once __DIR__ . '/includes/footer.php'; ?>

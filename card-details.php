@@ -1,45 +1,72 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gift Card Details - AirAsia Rewards</title>
-    <link rel="stylesheet" href="css/styles.css">
-</head>
-<body>
-    <header>
-        <h1>AirAsia Rewards Catalog</h1>
-        <nav>
-            <a href="card-list.php">Back to Gift Card List</a>
-        </nav>
-    </header>
-    <main>
-        <section class="card-panel">
-            <div class="details-container">
-                <div class="details-image">
-                    <img src="images/gift-card.png" alt="AirAsia $100 Flight Voucher">
-                </div>
-                <div class="details-info">
-                    <h2>AirAsia $100 Flight Voucher</h2>
-                    
-                    <div class="info-row">
-                        <span class="info-label">Card Type:</span> Travel
-                    </div>
-                    <div class="info-row">
-                        <span class="info-label">Card Value:</span> $100.00
-                    </div>
-                    <div class="info-row">
-                        <span class="info-label">Points Required:</span> 10,000 Points
-                    </div>
+<?php
+require_once __DIR__ . '/includes/db.php';
+require_once __DIR__ . '/includes/validation.php';
 
-                    <div class="action-buttons">
-                        <a href="card-list.php" class="btn btn-primary">Redeem Gift Card</a>
-                        <a href="card-update.php" class="btn btn-secondary">Update Gift Card</a>
-                        <a href="card-list.php" class="btn btn-danger">Delete Gift Card</a>
-                    </div>
+$cardId = validateCardId($_GET['card_id'] ?? null);
+$card = null;
+$errorMessage = '';
+
+if ($cardId === null) {
+    $errorMessage = 'Invalid Gift Card identifier provided.';
+} else {
+    $pdo = getDbConnection();
+    $stmt = $pdo->prepare('SELECT cardId, cardName, cardType, cardValue, points FROM GIFTCARD WHERE cardId = :cardId');
+    $stmt->execute([':cardId' => $cardId]);
+    $card = $stmt->fetch();
+
+    if (!$card) {
+        $errorMessage = 'The requested Gift Card could not be found.';
+    }
+}
+
+$updatedNotice = (isset($_GET['status']) && $_GET['status'] === 'updated');
+
+$pageTitle = 'Gift Card Details - AirAsia Rewards';
+require_once __DIR__ . '/includes/header.php';
+?>
+
+<?php if ($updatedNotice && $card): ?>
+    <div class="card-panel" style="margin-bottom: 1.5rem; border-left: 5px solid #28a745; padding: 1rem 1.5rem;">
+        <strong>Gift card updated successfully.</strong>
+    </div>
+<?php endif; ?>
+
+<section class="card-panel">
+    <?php if ($errorMessage !== ''): ?>
+        <h2>Gift Card Not Available</h2>
+        <p><?= htmlspecialchars($errorMessage, ENT_QUOTES, 'UTF-8') ?></p>
+        <div class="action-buttons">
+            <a href="card-list.php" class="btn btn-secondary">Return to Gift Card List</a>
+        </div>
+    <?php else: ?>
+        <div class="details-container">
+            <div class="details-image">
+                <img src="images/gift-card.png" alt="<?= htmlspecialchars($card['cardName'], ENT_QUOTES, 'UTF-8') ?>">
+            </div>
+            <div class="details-info">
+                <h2><?= htmlspecialchars($card['cardName'], ENT_QUOTES, 'UTF-8') ?></h2>
+
+                <div class="info-row">
+                    <span class="info-label">Card ID:</span> <?= (int)$card['cardId'] ?>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Card Type:</span> <?= htmlspecialchars($card['cardType'], ENT_QUOTES, 'UTF-8') ?>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Card Value:</span> $<?= number_format((float)$card['cardValue'], 2) ?>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Points Required:</span> <?= number_format((int)$card['points']) ?> Points
+                </div>
+
+                <div class="action-buttons">
+                    <a href="card-update.php?card_id=<?= (int)$card['cardId'] ?>" class="btn btn-primary">Update Gift Card</a>
+                    <a href="card-delete.php?card_id=<?= (int)$card['cardId'] ?>" class="btn btn-danger">Delete Gift Card</a>
+                    <a href="card-list.php" class="btn btn-secondary">Return to Gift Card List</a>
                 </div>
             </div>
-        </section>
-    </main>
-</body>
-</html>
+        </div>
+    <?php endif; ?>
+</section>
+
+<?php require_once __DIR__ . '/includes/footer.php'; ?>
